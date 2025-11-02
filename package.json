@@ -1,0 +1,21 @@
+{
+  "name": "airfocus",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm --workspace apps/desktop run tauri dev",
+    "build": "npm --workspace apps/desktop run build"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0",
+    "tailwindcss-animate": "^1.0.7"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.21",
+    "@types/react-leaflet": "^2.8.3"
+  }
+}

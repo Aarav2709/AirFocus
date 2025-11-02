@@ -1,0 +1,170 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+    background-color: #0a0e1a;
+  }
+
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+    background: #0a0e1a;
+    color: rgba(255, 255, 255, 0.95);
+    overflow: hidden;
+  }
+
+  #root {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+}
+
+@layer utilities {
+  .backdrop-blur-glass {
+    backdrop-filter: blur(40px) saturate(180%);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+  }
+
+  .text-shadow-glow {
+    text-shadow: 0 0 20px rgba(79, 157, 255, 0.4);
+  }
+}
+
+/* Leaflet overrides for buttery-smooth Google Maps experience */
+.leaflet-container {
+  background: #f0f0f0 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif !important;
+}
+
+.leaflet-tile-pane {
+  filter: brightness(1.02) contrast(1.05) saturate(1.08);
+  will-change: transform;
+}
+
+.leaflet-tile-container {
+  will-change: transform, opacity;
+}
+
+/* Disable Leaflet's built-in pan animation - we handle it with RAF */
+.leaflet-zoom-animated,
+.leaflet-pan-anim,
+.leaflet-zoom-anim {
+  transition: none !important;
+}
+
+.google-maps-cursor, .origin-marker, .dest-marker {
+  background: transparent !important;
+  border: none !important;
+  will-change: transform;
+}
+
+.leaflet-marker-icon {
+  transition: none !important;
+}
+
+/* Smooth tile loading */
+.leaflet-fade-anim .leaflet-tile {
+  will-change: opacity;
+  transition: opacity 0.4s ease-in-out !important;
+}
+
+/* Hardware acceleration everywhere */
+.leaflet-container,
+.leaflet-pane,
+.leaflet-tile-pane,
+.leaflet-marker-pane,
+.leaflet-overlay-pane,
+.leaflet-map-pane {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Google Maps style pulsing ring animation */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Force GPU rendering */
+.leaflet-container * {
+  transform: translateZ(0);
+}
+
+/* Smooth cursor/pointer transitions */
+.leaflet-interactive {
+  will-change: auto;
+}
+
+/* Custom scrollbar for airplane seat view */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+  background-clip: padding-box;
+}
+
+/* Invisible scrollbar for flight selector */
+.scrollbar-invisible {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-invisible::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* 3D Map perspective enhancements */
+.leaflet-container {
+  transform-style: preserve-3d;
+  perspective: 1200px;
+}
+
+/* Enhanced depth perception */
+.leaflet-tile-pane {
+  transform: translateZ(-20px) scale(1.02);
+  transform-style: preserve-3d;
+}
+
+.leaflet-overlay-pane,
+.leaflet-marker-pane {
+  transform: translateZ(10px);
+  transform-style: preserve-3d;
+}
