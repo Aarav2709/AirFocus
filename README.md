@@ -2,6 +2,12 @@
 
 A desktop focus timer application that transforms deep work into virtual flight journeys. Built with Tauri, React, and TypeScript.
 
+<p align="center">
+  <img src="./screenshots/img1.png" alt="AirFocus screenshot 1" width="300" />
+  <img src="./screenshots/img2.png" alt="AirFocus screenshot 2" width="300" />
+  <img src="./screenshots/img3.png" alt="AirFocus screenshot 3" width="300" />
+</p>
+
 ## Features
 
 - Book virtual flights between real cities to represent focus sessions
