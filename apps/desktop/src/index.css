@@ -4,8 +4,25 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
-    background-color: #0a0e1a;
+    color-scheme: light;
+    background-color: #f5f5f7;
+
+    /* macOS-inspired animation curves */
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* macOS color palette */
+    --macos-bg: #f5f5f7;
+    --macos-card: #ffffff;
+    --macos-text: #1d1d1f;
+    --macos-text-secondary: #6e6e73;
+    --macos-border: #d2d2d7;
+    --macos-blue: #007aff;
+    --macos-purple: #af52de;
+    --macos-green: #34c759;
+    --macos-shadow: rgba(0, 0, 0, 0.1);
   }
 
   * {
@@ -16,9 +33,9 @@
   body {
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
-    background: #0a0e1a;
-    color: rgba(255, 255, 255, 0.95);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+    background: var(--macos-bg);
+    color: var(--macos-text);
     overflow: hidden;
   }
 
@@ -30,24 +47,57 @@
 }
 
 @layer utilities {
-  .backdrop-blur-glass {
-    backdrop-filter: blur(40px) saturate(180%);
-    -webkit-backdrop-filter: blur(40px) saturate(180%);
+  .backdrop-blur-macos {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
   }
 
-  .text-shadow-glow {
-    text-shadow: 0 0 20px rgba(79, 157, 255, 0.4);
+  .macos-card {
+    background: var(--macos-card);
+    border-radius: 16px;
+    box-shadow: 0 2px 16px var(--macos-shadow);
+  }
+
+  .macos-button {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--macos-text);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-smooth);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 2px 8px var(--macos-shadow);
+  }
+
+  .macos-button:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  .macos-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px var(--macos-shadow);
+  }
+
+  .animated-element {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
   }
 }
 
-/* Leaflet overrides for buttery-smooth Google Maps experience */
+/* Leaflet overrides for clean Apple Maps experience */
 .leaflet-container {
-  background: #f0f0f0 !important;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", system-ui, sans-serif !important;
+  background: #f5f5f7 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif !important;
 }
 
 .leaflet-tile-pane {
-  filter: brightness(1.02) contrast(1.05) saturate(1.08);
+  filter: brightness(1.0) contrast(1.0) saturate(0.95);
   will-change: transform;
 }
 
@@ -55,11 +105,11 @@
   will-change: transform, opacity;
 }
 
-/* Disable Leaflet's built-in pan animation - we handle it with RAF */
+/* Smooth pan animation */
 .leaflet-zoom-animated,
 .leaflet-pan-anim,
 .leaflet-zoom-anim {
-  transition: none !important;
+  transition: transform 0.3s var(--ease-smooth) !important;
 }
 
 .google-maps-cursor, .origin-marker, .dest-marker {
@@ -78,7 +128,7 @@
   transition: opacity 0.4s ease-in-out !important;
 }
 
-/* Hardware acceleration everywhere */
+/* Hardware acceleration */
 .leaflet-container,
 .leaflet-pane,
 .leaflet-tile-pane,
@@ -90,15 +140,55 @@
   perspective: 1000px;
 }
 
-/* Google Maps style pulsing ring animation */
+/* Smooth pulsing ring animation for map cursor */
 @keyframes pulse-ring {
   0% {
     transform: scale(0.5);
-    opacity: 0.8;
+    opacity: 0.6;
   }
   100% {
     transform: scale(1.5);
     opacity: 0;
+  }
+}
+
+/* Boarding pass tear animation */
+@keyframes barcode-tear {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  60% {
+    transform: translateY(150px) rotate(3deg);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(250px) rotate(5deg);
+    opacity: 0;
+  }
+}
+
+/* Check-in success animation */
+@keyframes check-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+/* Smooth fade-in */
+@keyframes macos-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -112,30 +202,30 @@
   will-change: auto;
 }
 
-/* Custom scrollbar for airplane seat view */
-.scrollbar-thin {
+/* Custom macOS-style scrollbar */
+.scrollbar-macos {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05);
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
 }
 
-.scrollbar-thin::-webkit-scrollbar {
+.scrollbar-macos::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
+.scrollbar-macos::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+.scrollbar-macos::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+.scrollbar-macos::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
   background-clip: padding-box;
 }
 
@@ -151,20 +241,87 @@
   height: 0;
 }
 
-/* 3D Map perspective enhancements */
-.leaflet-container {
-  transform-style: preserve-3d;
-  perspective: 1200px;
+/* macOS window controls */
+.window-controls {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  -webkit-app-region: drag;
 }
 
-/* Enhanced depth perception */
-.leaflet-tile-pane {
-  transform: translateZ(-20px) scale(1.02);
-  transform-style: preserve-3d;
+.traffic-light {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: filter 0.2s ease;
 }
 
-.leaflet-overlay-pane,
-.leaflet-marker-pane {
-  transform: translateZ(10px);
-  transform-style: preserve-3d;
+.traffic-light:hover {
+  filter: brightness(1.2);
+}
+
+.traffic-light.red {
+  background: #ff5f57;
+}
+
+.traffic-light.yellow {
+  background: #ffbd2e;
+}
+
+.traffic-light.green {
+  background: #28ca42;
+}
+
+/* Boarding pass styles */
+.boarding-pass {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px var(--macos-shadow);
+  overflow: hidden;
+  position: relative;
+}
+
+.barcode-section {
+  border-top: 2px dashed var(--macos-border);
+  transition: all 0.6s var(--ease-out-quart);
+  transform-origin: top center;
+}
+
+.barcode-section.tearing {
+  animation: barcode-tear 0.8s var(--ease-out-quart) forwards;
+}
+
+.perforation {
+  position: absolute;
+  left: -16px;
+  right: -16px;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--macos-border) 0px,
+    var(--macos-border) 10px,
+    transparent 10px,
+    transparent 20px
+  );
+}
+
+/* Responsive behavior */
+@media (max-width: 768px) {
+  .boarding-pass {
+    margin: 16px;
+    border-radius: 12px;
+  }
+
+  .macos-button {
+    min-height: 44px;
+    padding: 12px 20px;
+  }
+
+  .traffic-light {
+    width: 10px;
+    height: 10px;
+  }
 }

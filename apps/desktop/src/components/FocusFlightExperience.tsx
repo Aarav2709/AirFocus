@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import AnimatedNumbers from "react-animated-numbers";
 import {
   useFocusStore,
   selectGreeting,
@@ -22,6 +23,66 @@ import { FLIGHT_DATA } from "../data/fake-flights";
 const FOCUS_TYPES: FocusType[] = ["Work", "Study", "Meditate", "Read"];
 const SEAT_ROWS = 6;
 const SEAT_COLUMNS = 4;
+
+// Smart animated number component - only animates digits that change
+function SmartAnimatedNumber({ value }: { value: number }) {
+  const [prevValue, setPrevValue] = useState(value);
+  const valueStr = String(value);
+  const prevValueStr = String(prevValue);
+
+  useEffect(() => {
+    // Delay updating prevValue to allow animation to complete
+    const timer = setTimeout(() => {
+      setPrevValue(value);
+    }, 650); // Slightly longer than animation duration
+    return () => clearTimeout(timer);
+  }, [value]);
+
+  // Pad strings to same length for comparison
+  const maxLen = Math.max(valueStr.length, prevValueStr.length);
+  const paddedCurrent = valueStr.padStart(maxLen, '0');
+  const paddedPrev = prevValueStr.padStart(maxLen, '0');
+
+  return (
+    <span style={{ display: 'inline-flex' }}>
+      {paddedCurrent.split('').map((digit, index) => {
+        const isChanging = digit !== paddedPrev[index];
+        const isLeadingZero = index < maxLen - valueStr.length;
+
+        if (isLeadingZero) return null;
+
+        if (isChanging) {
+          return (
+            <AnimatedNumbers
+              key={`${index}-animated`}
+              animateToNumber={parseInt(digit)}
+              fontStyle={{
+                fontSize: 36,
+                fontWeight: 700,
+                fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif"
+              }}
+              transitions={(idx) => ({
+                type: "spring",
+                duration: 0.6,
+                bounce: 0
+              })}
+            />
+          );
+        }
+
+        return (
+          <span key={`${index}-static`} style={{
+            fontSize: 36,
+            fontWeight: 700,
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif"
+          }}>
+            {digit}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
 
 export default function FocusFlightExperience(): ReactElement {
   const view = useFocusStore((state) => state.view);
@@ -98,142 +159,68 @@ export default function FocusFlightExperience(): ReactElement {
   }, [history, activeFlight?.sessionId]);
   const latestCompleted = history[history.length - 1] ?? null;
 
+  // Get time-based greeting
+  const getTimeBasedGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    if (hour < 21) return "Good Evening";
+    return "Good Night";
+  };
+
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#0a0e1a]">
-      {/* Full background Apple Map */}
+    <div className="relative h-screen w-screen overflow-hidden bg-white">
+      {/* Full background Map - Always visible */}
       <div className="absolute inset-0 z-0">
         <AppleMapBackdrop activeFlight={activeFlight} planeProgress={planeProgress} />
       </div>
 
-      {/* Top left - Greeting */}
-      {view !== "IN_FLIGHT" && (
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="absolute left-6 top-6 z-20"
-        >
-          <h1 className="text-3xl font-bold text-black drop-shadow-lg">{greeting}</h1>
-        </motion.div>
-      )}
-
-      {/* Top right - Navigation buttons */}
-      {view !== "IN_FLIGHT" && (
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="absolute right-6 top-6 z-20 flex gap-3"
-        >
-          <button
-            type="button"
-            onClick={() => togglePanel("history")}
-            className={clsx(
-              "rounded-xl border px-4 py-2 text-sm font-medium transition backdrop-blur-xl",
-              panels.history
-                ? "border-blue-400/60 bg-blue-500/30 text-black shadow-lg"
-                : "border-black/20 bg-white/10 text-black/80 hover:border-black/30 hover:bg-white/20"
-            )}
-          >
-            History
-          </button>
-          <button
-            type="button"
-            onClick={() => togglePanel("trends")}
-            className={clsx(
-              "rounded-xl border px-4 py-2 text-sm font-medium transition backdrop-blur-xl",
-              panels.trends
-                ? "border-blue-400/60 bg-blue-500/30 text-black shadow-lg"
-                : "border-black/20 bg-white/10 text-black/80 hover:border-black/30 hover:bg-white/20"
-            )}
-          >
-            Trends
-          </button>
-          <button
-            type="button"
-            onClick={() => togglePanel("settings")}
-            className={clsx(
-              "rounded-xl border px-4 py-2 text-sm font-medium transition backdrop-blur-xl",
-              panels.settings
-                ? "border-blue-400/60 bg-blue-500/30 text-black shadow-lg"
-                : "border-black/20 bg-white/10 text-black/80 hover:border-black/30 hover:bg-white/20"
-            )}
-          >
-            Settings
-          </button>
-        </motion.div>
-      )}
-
-      {/* Bottom center - Flight info widgets (when in flight) */}
-      {view === "IN_FLIGHT" && activeFlight && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="absolute bottom-6 z-20 flex w-full items-center justify-center gap-2 px-6"
-        >
-          {/* Flight route */}
-          <div className="flex min-h-[48px] flex-col justify-center rounded-lg border border-black/20 bg-white/90 px-3 py-2 backdrop-blur-xl">
-            <p className="text-[8px] font-medium uppercase tracking-wider text-black/50">Flight {activeFlight.flight.flightNo}</p>
-            <div className="mt-0.5 flex items-center gap-1 text-sm font-bold text-black">
-              <span>{activeFlight.flight.origin}</span>
-              <svg className="h-2.5 w-2.5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
-              </svg>
-              <span>{activeFlight.flight.dest}</span>
-            </div>
-          </div>
-
-          {/* Timer */}
-          <div className="flex min-h-[48px] flex-col justify-center rounded-lg border border-black/20 bg-white/90 px-3 py-2 backdrop-blur-xl">
-            <p className="text-[8px] font-medium uppercase tracking-wider text-black/50">Time</p>
-            <p className="mt-0.5 text-lg font-bold tabular-nums text-black">
-              {formatCountdown(Math.max(activeFlight.durationMinutes * 60 - activeFlight.elapsedSeconds, 0))}
-            </p>
-          </div>
-
-          {/* Distance */}
-          <div className="flex min-h-[48px] flex-col justify-center rounded-lg border border-black/20 bg-white/90 px-3 py-2 backdrop-blur-xl">
-            <p className="text-[8px] font-medium uppercase tracking-wider text-black/50">Distance</p>
-            <p className="mt-0.5 text-sm font-bold text-black">{remainingKm} km</p>
-            <div className="mt-1 h-1 w-16 overflow-hidden rounded-full bg-black/10">
-              <motion.div
-                className="h-full bg-blue-500"
-                initial={{ width: 0 }}
-                animate={{ width: `${planeProgress * 100}%` }}
-                transition={{ duration: 1, ease: "linear" }}
-              />
-            </div>
-          </div>
-
-          {/* Take Off button (when ready) */}
-          {activeFlight.status === "ready" && (
-            <motion.button
-              type="button"
-              onClick={launchFlight}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="rounded-lg bg-blue-500 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-blue-500/30 transition hover:bg-blue-600"
-            >
-              Take Off
-            </motion.button>
-          )}
-        </motion.div>
-      )}
-
-      {/* Center - Start Journey button (only on home) */}
+      {/* Main Menu - Home View */}
       {view === "HOME" && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center">
+        <>
+          {/* Greeting - Top Left Corner */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            className="text-center"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="absolute left-12 top-12 z-20"
           >
-            <h2 className="text-4xl font-bold leading-tight text-black drop-shadow-lg">
-              Chart your next
-              <br />
-              AirFocus flight.
+            <h2 className="text-3xl font-light text-gray-600" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif" }}>
+              {getTimeBasedGreeting()}
             </h2>
+            <h1 className="mt-2 text-6xl font-bold text-gray-900" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif" }}>
+              {userName}.
+            </h1>
+          </motion.div>
+
+          {/* Left side buttons */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="absolute left-8 bottom-8 z-20 flex flex-col gap-4"
+          >
+            <button
+              type="button"
+              onClick={() => togglePanel("history")}
+              className="rounded-3xl border border-gray-300/80 bg-white/95 px-8 py-3.5 text-sm font-semibold text-gray-700 shadow-xl backdrop-blur-xl transition-all hover:scale-105 hover:border-gray-400 hover:bg-white hover:shadow-2xl"
+            >
+              History
+            </button>
+            <button
+              type="button"
+              onClick={() => togglePanel("trends")}
+              className="rounded-3xl border border-gray-300/80 bg-white/95 px-8 py-3.5 text-sm font-semibold text-gray-700 shadow-xl backdrop-blur-xl transition-all hover:scale-105 hover:border-gray-400 hover:bg-white hover:shadow-2xl"
+            >
+              Trends
+            </button>
+            <button
+              type="button"
+              onClick={() => togglePanel("settings")}
+              className="rounded-3xl border border-gray-300/80 bg-white/95 px-8 py-3.5 text-sm font-semibold text-gray-700 shadow-xl backdrop-blur-xl transition-all hover:scale-105 hover:border-gray-400 hover:bg-white hover:shadow-2xl"
+            >
+              Settings
+            </button>
+
+            {/* Start Journey button */}
             <motion.button
               type="button"
               onClick={() => {
@@ -241,13 +228,59 @@ export default function FocusFlightExperience(): ReactElement {
                 goTo("SELECT_FLIGHT");
               }}
               whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="mt-6 rounded-full bg-blue-500 px-10 py-3.5 text-sm font-bold uppercase tracking-wider text-white shadow-2xl shadow-blue-500/50 transition hover:bg-blue-600"
+              whileTap={{ scale: 0.98 }}
+              className="mt-2 rounded-3xl bg-gray-900 px-8 py-4 text-sm font-bold text-white shadow-2xl transition-all hover:bg-black hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]"
             >
               Start Journey
             </motion.button>
           </motion.div>
-        </div>
+        </>
+      )}
+
+      {/* In-Flight Status Bar - Time left, Distance right */}
+      {view === "IN_FLIGHT" && activeFlight && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+          className="absolute bottom-8 left-0 right-0 z-20 flex items-center justify-between px-8"
+        >
+          {/* Time Remaining - Extreme Left */}
+          <div className="flex flex-col items-start rounded-2xl bg-white/95 px-8 py-5 shadow-xl backdrop-blur-xl">
+            <span className="text-xs font-medium text-gray-500">Time Remaining</span>
+            <div className="mt-2 flex items-center gap-1" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif", fontSize: 36, fontWeight: 700 }}>
+              <SmartAnimatedNumber value={Math.floor(Math.max(activeFlight.durationMinutes * 60 - activeFlight.elapsedSeconds, 0) / 60)} />
+              <span>:</span>
+              <span style={{ minWidth: '1.5em', display: 'inline-block', textAlign: 'right' }}>
+                {Math.floor(Math.max(activeFlight.durationMinutes * 60 - activeFlight.elapsedSeconds, 0) % 60) < 10 && '0'}
+                <SmartAnimatedNumber value={Math.floor(Math.max(activeFlight.durationMinutes * 60 - activeFlight.elapsedSeconds, 0) % 60)} />
+              </span>
+            </div>
+          </div>
+
+          {/* Distance Remaining - Extreme Right */}
+          <div className="flex flex-col items-end rounded-2xl bg-white/95 px-8 py-5 shadow-xl backdrop-blur-xl">
+            <span className="text-xs font-medium text-gray-500">Distance</span>
+            <div className="mt-2 flex items-baseline">
+              <SmartAnimatedNumber value={Math.round(remainingKm)} />
+              <span className="ml-2 text-2xl font-semibold text-gray-600" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif" }}>km</span>
+            </div>
+          </div>
+
+          {/* Take Off button (when ready) - center */}
+          {activeFlight.status === "ready" && (
+            <motion.button
+              type="button"
+              onClick={launchFlight}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              className="absolute left-1/2 -translate-x-1/2 rounded-2xl bg-blue-500 px-10 py-5 text-lg font-semibold text-white shadow-2xl transition hover:bg-blue-600"
+            >
+              Take Off
+            </motion.button>
+          )}
+        </motion.div>
       )}
 
       {/* Side panels */}
@@ -601,11 +634,12 @@ function Modal({
   const widthClass = size === "lg" ? "max-w-4xl" : size === "sm" ? "max-w-md" : "max-w-2xl";
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
+      onClick={onClose}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -613,14 +647,15 @@ function Modal({
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className={clsx("pointer-events-auto w-full px-6", widthClass)}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="rounded-3xl border border-white/10 bg-[#0d1117]/95 px-8 py-8 shadow-2xl backdrop-blur-glass">
-          <div className="mb-8 flex items-center justify-between">
-            <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-white/60">{title}</h3>
+        <div className="rounded-3xl border border-gray-200 bg-white px-10 py-8 shadow-2xl macos-card">
+          <div className="mb-6 flex items-center justify-between">
+            <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
             <button
               type="button"
               onClick={onClose}
-              className="text-xs font-medium uppercase tracking-[0.15em] text-white/40 transition hover:text-white/70"
+              className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
             >
               Close
             </button>
@@ -662,25 +697,25 @@ function FlightSelector({
               className={clsx(
                 "rounded-xl border p-4 text-left transition-all",
                 active
-                  ? "border-blue-400/60 bg-blue-500/20 shadow-lg shadow-blue-500/20"
-                  : "border-white/10 bg-white/5 hover:border-blue-400/40 hover:bg-blue-500/10"
+                  ? "border-blue-400 bg-blue-50 shadow-lg"
+                  : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50"
               )}
             >
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-white/50">{flight.airline}</p>
-              <p className="mt-2 text-xl font-bold text-white">
-                {flight.origin} <span className="text-white/30">→</span> {flight.dest}
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-500">{flight.airline}</p>
+              <p className="mt-2 text-xl font-bold text-gray-900">
+                {flight.origin} <span className="text-gray-400">→</span> {flight.dest}
               </p>
-              <p className="mt-1.5 text-xs font-medium text-white/60">Flight {flight.flightNo}</p>
-              <p className="mt-0.5 text-[10px] text-white/40">Departs {flight.departure}</p>
+              <p className="mt-1.5 text-xs font-medium text-gray-600">Flight {flight.flightNo}</p>
+              <p className="mt-0.5 text-[10px] text-gray-500">Departs {flight.departure}</p>
             </motion.button>
           );
         })}
       </div>
 
-      <div className="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-6">
+      <div className="space-y-4 rounded-2xl border border-gray-200 bg-gray-50 p-6">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-wider text-white/60">Duration</span>
-          <span className="text-sm font-bold text-white">{duration} min</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">Duration</span>
+          <span className="text-sm font-bold text-gray-900">{duration} min</span>
         </div>
         <input
           type="range"
@@ -688,24 +723,24 @@ function FlightSelector({
           max={180}
           value={duration}
           onChange={(e) => onDurationChange(Number(e.target.value))}
-          className="h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
+          className="h-2 w-full cursor-pointer appearance-none rounded-full bg-gray-200 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
         />
-        <div className="flex justify-between text-xs text-white/40">
+        <div className="flex justify-between text-xs text-gray-500">
           <span>5 min</span>
           <span>3 hours</span>
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-2xl border border-dashed border-white/10 bg-white/5 p-5">
+      <div className="flex items-center justify-between rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-5">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Selected Route</p>
-          <p className="mt-2 font-medium text-white">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Selected Route</p>
+          <p className="mt-2 font-medium text-gray-900">
             {selectedFlight ? (
               <span>
-                {selectedFlight.origin} <span className="text-white/40">→</span> {selectedFlight.dest}
+                {selectedFlight.origin} <span className="text-gray-400">→</span> {selectedFlight.dest}
               </span>
             ) : (
-              <span className="text-white/50">Select a flight to continue.</span>
+              <span className="text-gray-500">Select a flight to continue.</span>
             )}
           </p>
         </div>
@@ -715,7 +750,7 @@ function FlightSelector({
           disabled={!selectedFlight}
           whileHover={selectedFlight ? { scale: 1.05 } : {}}
           whileTap={selectedFlight ? { scale: 0.95 } : {}}
-          className="rounded-full bg-blue-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30 disabled:shadow-none"
+          className="rounded-full bg-blue-500 px-6 py-3 text-sm font-bold text-white shadow-lg transition disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none"
         >
           Book Flight
         </motion.button>
@@ -743,28 +778,28 @@ function SeatSelector({
   return (
     <div className="space-y-6">
       {/* Airplane top-down view */}
-      <div className="relative rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-white/10 p-8">
+      <div className="relative rounded-3xl border border-gray-200 bg-gradient-to-b from-gray-50 to-white p-8">
         {/* Cockpit */}
         <div className="mb-6 flex justify-center">
-          <div className="h-16 w-32 rounded-t-full border-2 border-white/20 bg-white/10 flex items-end justify-center pb-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-white/40">Cockpit</span>
+          <div className="h-16 w-32 rounded-t-full border-2 border-gray-300 bg-gray-100 flex items-end justify-center pb-2">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Cockpit</span>
           </div>
         </div>
 
         {/* Scrollable cabin */}
-        <div className="max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-white/5 scrollbar-thumb-white/20">
+        <div className="max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300">
           <div className="space-y-3">
             {/* Seat labels */}
             <div className="flex items-center justify-between px-4 pb-2">
               <div className="flex gap-2">
                 {leftSeats.map(seat => (
-                  <div key={seat} className="w-10 text-center text-[10px] font-bold text-white/40">{seat}</div>
+                  <div key={seat} className="w-10 text-center text-[10px] font-bold text-gray-500">{seat}</div>
                 ))}
               </div>
-              <div className="w-8 text-center text-[10px] font-bold text-white/30">AISLE</div>
+              <div className="w-8 text-center text-[10px] font-bold text-gray-400">AISLE</div>
               <div className="flex gap-2">
                 {rightSeats.map(seat => (
-                  <div key={seat} className="w-10 text-center text-[10px] font-bold text-white/40">{seat}</div>
+                  <div key={seat} className="w-10 text-center text-[10px] font-bold text-gray-500">{seat}</div>
                 ))}
               </div>
             </div>
@@ -790,15 +825,15 @@ function SeatSelector({
                         className={clsx(
                           "w-10 h-12 rounded-lg border-2 transition-all relative",
                           active
-                            ? "border-blue-400 bg-blue-500/40 shadow-lg shadow-blue-500/30"
+                            ? "border-blue-500 bg-blue-100 shadow-lg"
                             : isAvailable
-                            ? "border-white/20 bg-white/10 hover:border-blue-400/50 hover:bg-blue-500/20"
-                            : "border-white/5 bg-white/5 cursor-not-allowed opacity-30"
+                            ? "border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50"
+                            : "border-gray-200 bg-gray-100 cursor-not-allowed opacity-50"
                         )}
                       >
-                        <span className="text-[9px] font-bold text-white/70">{row}{letter}</span>
+                        <span className="text-[9px] font-bold text-gray-700">{row}{letter}</span>
                         {!isAvailable && (
-                          <div className="absolute inset-0 flex items-center justify-center text-white/30">✕</div>
+                          <div className="absolute inset-0 flex items-center justify-center text-gray-400">✕</div>
                         )}
                       </motion.button>
                     );
@@ -807,7 +842,7 @@ function SeatSelector({
 
                 {/* Row number in aisle */}
                 <div className="w-8 text-center">
-                  <span className="text-xs font-bold text-white/30">{row}</span>
+                  <span className="text-xs font-bold text-gray-400">{row}</span>
                 </div>
 
                 {/* Right side seats (D, E, F) */}
@@ -828,15 +863,15 @@ function SeatSelector({
                         className={clsx(
                           "w-10 h-12 rounded-lg border-2 transition-all relative",
                           active
-                            ? "border-blue-400 bg-blue-500/40 shadow-lg shadow-blue-500/30"
+                            ? "border-blue-500 bg-blue-100 shadow-lg"
                             : isAvailable
-                            ? "border-white/20 bg-white/10 hover:border-blue-400/50 hover:bg-blue-500/20"
-                            : "border-white/5 bg-white/5 cursor-not-allowed opacity-30"
+                            ? "border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50"
+                            : "border-gray-200 bg-gray-100 cursor-not-allowed opacity-50"
                         )}
                       >
-                        <span className="text-[9px] font-bold text-white/70">{row}{letter}</span>
+                        <span className="text-[9px] font-bold text-gray-700">{row}{letter}</span>
                         {!isAvailable && (
-                          <div className="absolute inset-0 flex items-center justify-center text-white/30">✕</div>
+                          <div className="absolute inset-0 flex items-center justify-center text-gray-400">✕</div>
                         )}
                       </motion.button>
                     );
@@ -849,30 +884,30 @@ function SeatSelector({
 
         {/* Rear of plane */}
         <div className="mt-6 flex justify-center">
-          <div className="h-12 w-48 rounded-b-xl border-2 border-white/20 bg-white/10 flex items-center justify-center">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-white/40">Lavatory</span>
+          <div className="h-12 w-48 rounded-b-xl border-2 border-gray-300 bg-gray-100 flex items-center justify-center">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Lavatory</span>
           </div>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-center gap-6 text-[10px] text-white/50">
+      <div className="flex items-center justify-center gap-6 text-[10px] text-gray-600">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded border-2 border-white/20 bg-white/10"></div>
+          <div className="w-6 h-6 rounded border-2 border-gray-300 bg-white"></div>
           <span>Available</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded border-2 border-blue-400 bg-blue-500/40"></div>
+          <div className="w-6 h-6 rounded border-2 border-blue-500 bg-blue-100"></div>
           <span>Selected</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded border-2 border-white/5 bg-white/5 opacity-30"></div>
+          <div className="w-6 h-6 rounded border-2 border-gray-200 bg-gray-100 opacity-50"></div>
           <span>Occupied</span>
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
-        <span className="text-xs font-medium uppercase tracking-wider text-white/60">
+      <div className="flex items-center justify-between rounded-2xl border border-gray-300 bg-gray-50 px-5 py-4">
+        <span className="text-xs font-medium uppercase tracking-wider text-gray-600">
           {selectedSeat ? `Seat ${selectedSeat} selected.` : "Choose your seat."}
         </span>
         <motion.button
@@ -881,7 +916,7 @@ function SeatSelector({
           disabled={!selectedSeat}
           whileHover={selectedSeat ? { scale: 1.05 } : {}}
           whileTap={selectedSeat ? { scale: 0.95 } : {}}
-          className="rounded-full bg-blue-500 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-blue-500/30 transition disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30 disabled:shadow-none"
+          className="rounded-full bg-blue-500 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-lg transition disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none"
         >
           Confirm Seat
         </motion.button>
@@ -914,18 +949,18 @@ function FocusPicker({
               className={clsx(
                 "rounded-2xl border p-6 text-left transition-all",
                 active
-                  ? "border-blue-400/60 bg-blue-500/20 shadow-lg shadow-blue-500/20"
-                  : "border-white/10 bg-white/5 hover:border-blue-400/40 hover:bg-blue-500/10"
+                  ? "border-blue-500 bg-blue-50 shadow-lg"
+                  : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50"
               )}
             >
-              <p className="text-lg font-bold text-white">{type}</p>
-              <p className="mt-2 text-xs text-white/50">Lock in this mission for the flight ahead.</p>
+              <p className="text-lg font-bold text-gray-900">{type}</p>
+              <p className="mt-2 text-xs text-gray-600">Lock in this mission for the flight ahead.</p>
             </motion.button>
           );
         })}
       </div>
-      <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-5 py-4">
-        <span className="text-xs font-medium uppercase tracking-wider text-white/60">
+      <div className="flex items-center justify-between rounded-2xl border border-gray-300 bg-gray-50 px-5 py-4">
+        <span className="text-xs font-medium uppercase tracking-wider text-gray-600">
           {selected ? `${selected} mission armed` : "Select a mission"}
         </span>
         <motion.button
@@ -934,7 +969,7 @@ function FocusPicker({
           disabled={!selected}
           whileHover={selected ? { scale: 1.05 } : {}}
           whileTap={selected ? { scale: 0.95 } : {}}
-          className="rounded-full bg-blue-500 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-blue-500/30 transition disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30 disabled:shadow-none"
+          className="rounded-full bg-blue-500 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-lg transition disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none"
         >
           Confirm
         </motion.button>
@@ -966,95 +1001,116 @@ function BoardingPassCard({
 }) {
   const distanceKm = originCity && destinationCity ? distanceBetween(originCity, destinationCity) : null;
   const boardingTime = formatBoardingTime(2);
+  const [isTearing, setIsTearing] = useState(false);
+  const [barcodeHidden, setBarcodeHidden] = useState(false);
+
+  const handleCheckIn = () => {
+    setIsTearing(true);
+    setTimeout(() => {
+      setBarcodeHidden(true);
+      onCheckIn();
+    }, 800);
+  };
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Realistic Boarding Pass */}
-      <div className="relative overflow-hidden rounded-2xl border-2 border-white/20 bg-gradient-to-br from-white/10 via-white/5 to-white/10 shadow-2xl">
-        {/* Top section with perforation */}
-        <div className="relative border-b-2 border-dashed border-white/20 bg-white/5 p-6">
+      {/* Boarding Pass */}
+      <div className="boarding-pass relative overflow-hidden">
+        {/* Top section - Main boarding pass */}
+        <div className="relative bg-gradient-to-br from-gray-50 to-white p-8">
           {/* Airline header */}
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-8 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-white/60">{flight.airline}</p>
-              <p className="mt-1 text-2xl font-bold text-white">Boarding Pass</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">{flight.airline}</p>
+              <p className="mt-2 text-3xl font-bold text-gray-900">Boarding Pass</p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">Flight</p>
-              <p className="text-lg font-bold text-white">{flight.flightNo}</p>
+              <p className="text-xs font-medium text-gray-400">Flight</p>
+              <p className="text-2xl font-bold text-gray-900">{flight.flightNo}</p>
             </div>
           </div>
 
           {/* Route */}
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-8 flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">From</p>
-              <p className="text-5xl font-bold text-white">{flight.origin}</p>
-              <p className="mt-1 text-sm text-white/60">{originCity?.name ?? "Origin"}</p>
+              <p className="text-xs font-medium text-gray-400">From</p>
+              <p className="text-6xl font-bold text-gray-900">{flight.origin}</p>
+              <p className="mt-2 text-base text-gray-600">{originCity?.name ?? "Origin"}</p>
             </div>
-            <div className="flex flex-col items-center justify-center px-8">
-              <div className="text-4xl text-white/30">✈</div>
-              <p className="mt-2 text-[10px] font-bold text-white/40">{duration} MIN</p>
+            <div className="flex flex-col items-center justify-center px-10">
+              <div className="text-5xl text-gray-300">✈</div>
+              <p className="mt-3 text-sm font-bold text-gray-400">{duration} MIN</p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">To</p>
-              <p className="text-5xl font-bold text-white">{flight.dest}</p>
-              <p className="mt-1 text-sm text-white/60">{destinationCity?.name ?? "Destination"}</p>
+              <p className="text-xs font-medium text-gray-400">To</p>
+              <p className="text-6xl font-bold text-gray-900">{flight.dest}</p>
+              <p className="mt-2 text-base text-gray-600">{destinationCity?.name ?? "Destination"}</p>
             </div>
           </div>
 
           {/* Flight details grid */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-6">
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-white/40">Boarding Time</p>
-              <p className="mt-1 text-lg font-bold text-white">{boardingTime}</p>
+              <p className="text-xs font-medium text-gray-400">Boarding Time</p>
+              <p className="mt-2 text-xl font-bold text-gray-900">{boardingTime}</p>
             </div>
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-white/40">Seat</p>
-              <p className="mt-1 text-lg font-bold text-white">{seat}</p>
+              <p className="text-xs font-medium text-gray-400">Seat</p>
+              <p className="mt-2 text-xl font-bold text-gray-900">{seat}</p>
             </div>
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-white/40">Focus Type</p>
-              <p className="mt-1 text-lg font-bold text-white">{focusType}</p>
+              <p className="text-xs font-medium text-gray-400">Focus Type</p>
+              <p className="mt-2 text-xl font-bold text-gray-900">{focusType}</p>
             </div>
             {distanceKm !== null && (
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-white/40">Distance</p>
-                <p className="mt-1 text-lg font-bold text-white">{distanceKm} km</p>
+                <p className="text-xs font-medium text-gray-400">Distance</p>
+                <p className="mt-2 text-xl font-bold text-gray-900">{distanceKm} km</p>
               </div>
             )}
           </div>
 
           {/* Circular notches for tear effect */}
-          <div className="absolute -left-4 bottom-0 h-8 w-8 translate-y-1/2 rounded-full bg-[#0d1117]"></div>
-          <div className="absolute -right-4 bottom-0 h-8 w-8 translate-y-1/2 rounded-full bg-[#0d1117]"></div>
+          {!barcodeHidden && (
+            <>
+              <div className="absolute -left-4 bottom-0 h-8 w-8 translate-y-1/2 rounded-full bg-white"></div>
+              <div className="absolute -right-4 bottom-0 h-8 w-8 translate-y-1/2 rounded-full bg-white"></div>
+            </>
+          )}
         </div>
 
-        {/* Bottom section with barcode */}
-        <div className="flex items-center justify-between p-6">
-          <div className="flex-1">
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-white/40 mb-3">Passenger Name</p>
-            <p className="text-xl font-bold text-white">Focus Traveler</p>
-            <p className="mt-4 text-[9px] font-semibold uppercase tracking-wider text-white/40">Confirmation Code</p>
-            <p className="mt-1 text-sm font-mono font-bold text-white/70">{flight.flightNo}{seat}</p>
+        {/* Perforation line with dashed border */}
+        {!barcodeHidden && <div className="perforation"></div>}
+
+        {/* Bottom section with barcode - disappears when checked in */}
+        {!barcodeHidden && (
+          <div className={clsx("barcode-section bg-gradient-to-br from-white to-gray-50 p-8", isTearing && "tearing")}>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-xs font-medium text-gray-400">Passenger Name</p>
+                <p className="mt-2 text-2xl font-bold text-gray-900">Focus Traveler</p>
+                <p className="mt-6 text-xs font-medium text-gray-400">Confirmation Code</p>
+                <p className="mt-2 font-mono text-lg font-bold text-gray-700">{flight.flightNo}{seat}</p>
+              </div>
+              <div className="flex flex-col items-center gap-4">
+                <Barcode />
+                <p className="text-xs font-medium text-gray-400">Scan at gate</p>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-col items-center gap-3">
-            <Barcode />
-            <p className="text-[9px] font-semibold uppercase tracking-wider text-white/40">Scan at gate.</p>
-          </div>
-        </div>
+        )}
 
         {/* Actions */}
-        <div className="border-t border-white/10 bg-white/5 p-4 flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4 border-t border-gray-200 bg-gray-50 p-6">
           <motion.button
             type="button"
-            onClick={onCheckIn}
+            onClick={handleCheckIn}
             disabled={boardingState !== "idle"}
             whileHover={boardingState === "idle" ? { scale: 1.05 } : {}}
             whileTap={boardingState === "idle" ? { scale: 0.95 } : {}}
-            className="rounded-xl border-2 border-white/20 bg-white/10 px-6 py-3 text-xs font-bold uppercase tracking-wider text-white/70 transition hover:border-white/40 hover:bg-white/20 disabled:cursor-not-allowed disabled:border-white/5 disabled:bg-white/5 disabled:text-white/30"
+            className="flex-1 rounded-xl border-2 border-gray-300 bg-white px-6 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-400 hover:bg-gray-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-100 disabled:text-gray-400"
           >
-            Check In
+            {boardingState === "checked" ? "Checked In" : "Check In"}
           </motion.button>
           <motion.button
             type="button"
@@ -1062,7 +1118,7 @@ function BoardingPassCard({
             disabled={boardingState === "idle"}
             whileHover={boardingState !== "idle" ? { scale: 1.05 } : {}}
             whileTap={boardingState !== "idle" ? { scale: 0.95 } : {}}
-            className="rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-8 py-3 text-sm font-bold uppercase tracking-wider text-white shadow-lg shadow-blue-500/30 transition hover:from-blue-600 hover:to-blue-700 disabled:cursor-not-allowed disabled:from-white/20 disabled:to-white/20 disabled:shadow-none"
+            className="flex-1 rounded-xl bg-blue-500 px-8 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:shadow-none"
           >
             {boardingState === "boarding" ? "Boarding..." : "Board Flight"}
           </motion.button>
@@ -1293,26 +1349,26 @@ function Barcode() {
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center gap-2">
-      {/* Simple vertical barcode */}
-      <svg width="120" height="80" viewBox="0 0 120 80" className="rounded-lg border border-white/20 bg-white p-1">
+    <div className="flex flex-col items-center justify-center gap-3">
+      {/* macOS-style barcode */}
+      <svg width="140" height="90" viewBox="0 0 140 90" className="rounded-xl border border-gray-200 bg-white p-2 shadow-sm">
         <g>
           {barcodePattern.map((width, i) => {
-            const x = barcodePattern.slice(0, i).reduce((sum, w) => sum + w, 0) * 1.5;
+            const x = barcodePattern.slice(0, i).reduce((sum, w) => sum + w, 0) * 1.8;
             return (
               <rect
                 key={i}
                 x={x}
-                y={i % 3 === 0 ? 0 : i % 2 === 0 ? 2 : 0}
-                width={width * 1.5}
-                height={i % 3 === 0 ? 80 : i % 2 === 0 ? 76 : 80}
-                fill="#000000"
+                y={i % 3 === 0 ? 0 : i % 2 === 0 ? 3 : 0}
+                width={width * 1.8}
+                height={i % 3 === 0 ? 90 : i % 2 === 0 ? 84 : 90}
+                fill="#1d1d1f"
               />
             );
           })}
         </g>
       </svg>
-      <p className="font-mono text-[8px] font-medium tracking-widest text-white/60">
+      <p className="font-mono text-xs font-medium tracking-widest text-gray-500">
         *FF{Math.random().toString(36).substring(2, 8).toUpperCase()}*
       </p>
     </div>
