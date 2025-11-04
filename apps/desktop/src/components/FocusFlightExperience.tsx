@@ -57,9 +57,9 @@ function SmartAnimatedNumber({ value }: { value: number }) {
               key={`${index}-animated`}
               animateToNumber={parseInt(digit)}
               fontStyle={{
-                fontSize: 36,
-                fontWeight: 700,
-                fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif"
+                fontSize: 'inherit',
+                fontWeight: 'inherit',
+                fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
               }}
               transitions={(idx) => ({
                 type: "spring",
@@ -72,9 +72,9 @@ function SmartAnimatedNumber({ value }: { value: number }) {
 
         return (
           <span key={`${index}-static`} style={{
-            fontSize: 36,
-            fontWeight: 700,
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif"
+            fontSize: 'inherit',
+            fontWeight: 'inherit',
+            fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
           }}>
             {digit}
           </span>
@@ -196,91 +196,164 @@ export default function FocusFlightExperience(): ReactElement {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="absolute left-8 bottom-8 z-20 flex flex-col gap-4"
+            className="absolute left-8 bottom-8 z-20 flex flex-col gap-3"
+            style={{ fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif" }}
           >
-            <button
-              type="button"
-              onClick={() => togglePanel("history")}
-              className="rounded-3xl border border-gray-300/80 bg-white/95 px-8 py-3.5 text-sm font-semibold text-gray-700 shadow-xl backdrop-blur-xl transition-all hover:scale-105 hover:border-gray-400 hover:bg-white hover:shadow-2xl"
-            >
-              History
-            </button>
-            <button
-              type="button"
-              onClick={() => togglePanel("trends")}
-              className="rounded-3xl border border-gray-300/80 bg-white/95 px-8 py-3.5 text-sm font-semibold text-gray-700 shadow-xl backdrop-blur-xl transition-all hover:scale-105 hover:border-gray-400 hover:bg-white hover:shadow-2xl"
-            >
-              Trends
-            </button>
-            <button
-              type="button"
-              onClick={() => togglePanel("settings")}
-              className="rounded-3xl border border-gray-300/80 bg-white/95 px-8 py-3.5 text-sm font-semibold text-gray-700 shadow-xl backdrop-blur-xl transition-all hover:scale-105 hover:border-gray-400 hover:bg-white hover:shadow-2xl"
-            >
-              Settings
-            </button>
+            {/* Secondary Action Buttons */}
+            <div className="flex flex-col gap-2">
+              <motion.button
+                type="button"
+                onClick={() => togglePanel("history")}
+                whileHover={{ scale: 1.02, x: 2 }}
+                whileTap={{ scale: 0.98 }}
+                className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-xl px-6 py-3.5 text-left shadow-lg transition-all hover:shadow-xl"
+              >
+                <div className="relative z-10 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">History</div>
+                    <div className="text-xs text-gray-500">Past flights</div>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-50/0 to-blue-50/50 opacity-0 transition-opacity group-hover:opacity-100" />
+              </motion.button>
 
-            {/* Start Journey button */}
+              <motion.button
+                type="button"
+                onClick={() => togglePanel("trends")}
+                whileHover={{ scale: 1.02, x: 2 }}
+                whileTap={{ scale: 0.98 }}
+                className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-xl px-6 py-3.5 text-left shadow-lg transition-all hover:shadow-xl"
+              >
+                <div className="relative z-10 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-md">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">Trends</div>
+                    <div className="text-xs text-gray-500">Analytics</div>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-50/0 to-purple-50/50 opacity-0 transition-opacity group-hover:opacity-100" />
+              </motion.button>
+
+              <motion.button
+                type="button"
+                onClick={() => togglePanel("settings")}
+                whileHover={{ scale: 1.02, x: 2 }}
+                whileTap={{ scale: 0.98 }}
+                className="group relative overflow-hidden rounded-2xl bg-white/90 backdrop-blur-xl px-6 py-3.5 text-left shadow-lg transition-all hover:shadow-xl"
+              >
+                <div className="relative z-10 flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-gray-600 to-gray-700 text-white shadow-md">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">Settings</div>
+                    <div className="text-xs text-gray-500">Preferences</div>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-r from-gray-50/0 to-gray-50/50 opacity-0 transition-opacity group-hover:opacity-100" />
+              </motion.button>
+            </div>
+
+            {/* Primary Action Button */}
             <motion.button
               type="button"
               onClick={() => {
                 closePanels();
                 goTo("SELECT_FLIGHT");
               }}
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className="mt-2 rounded-3xl bg-gray-900 px-8 py-4 text-sm font-bold text-white shadow-2xl transition-all hover:bg-black hover:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)]"
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-r from-black to-gray-900 px-6 py-5 text-center shadow-2xl transition-all hover:shadow-3xl"
             >
-              Start Journey
+              <div className="relative z-10 flex items-center justify-center gap-3">
+                <svg className="h-5 w-5 text-white transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+                <span className="text-base font-bold text-white">Start Journey</span>
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-white/0 to-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
             </motion.button>
           </motion.div>
         </>
       )}
 
-      {/* In-Flight Status Bar - Time left, Distance right */}
+      {/* In-Flight Status - Glassmorphic Boxes */}
       {view === "IN_FLIGHT" && activeFlight && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="absolute bottom-8 left-0 right-0 z-20 flex items-center justify-between px-8"
-        >
-          {/* Time Remaining - Extreme Left */}
-          <div className="flex flex-col items-start rounded-2xl bg-white/95 px-8 py-5 shadow-xl backdrop-blur-xl">
-            <span className="text-xs font-medium text-gray-500">Time Remaining</span>
-            <div className="mt-2 flex items-center gap-1" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif", fontSize: 36, fontWeight: 700 }}>
-              <SmartAnimatedNumber value={Math.floor(Math.max(activeFlight.durationMinutes * 60 - activeFlight.elapsedSeconds, 0) / 60)} />
-              <span>:</span>
-              <span style={{ minWidth: '1.5em', display: 'inline-block', textAlign: 'right' }}>
-                {Math.floor(Math.max(activeFlight.durationMinutes * 60 - activeFlight.elapsedSeconds, 0) % 60) < 10 && '0'}
-                <SmartAnimatedNumber value={Math.floor(Math.max(activeFlight.durationMinutes * 60 - activeFlight.elapsedSeconds, 0) % 60)} />
-              </span>
+        <>
+          {/* Time Remaining - Bottom Left */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+            className="absolute bottom-8 left-8 z-20"
+            style={{ fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif" }}
+          >
+            <div className="rounded-2xl border border-white/20 bg-white/10 px-8 py-6 shadow-2xl backdrop-blur-2xl">
+              <div className="text-center">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/70">
+                  Time Remaining
+                </div>
+                <div className="flex items-center gap-1 font-mono text-5xl font-bold tabular-nums text-white">
+                  <SmartAnimatedNumber value={Math.floor(Math.max(activeFlight.durationMinutes * 60 - activeFlight.elapsedSeconds, 0) / 60)} />
+                  <span className="text-3xl text-white/60">:</span>
+                  <span style={{ minWidth: '1.5em', display: 'inline-block', textAlign: 'right' }}>
+                    {Math.floor(Math.max(activeFlight.durationMinutes * 60 - activeFlight.elapsedSeconds, 0) % 60) < 10 && '0'}
+                    <SmartAnimatedNumber value={Math.floor(Math.max(activeFlight.durationMinutes * 60 - activeFlight.elapsedSeconds, 0) % 60)} />
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* Distance Remaining - Extreme Right */}
-          <div className="flex flex-col items-end rounded-2xl bg-white/95 px-8 py-5 shadow-xl backdrop-blur-xl">
-            <span className="text-xs font-medium text-gray-500">Distance</span>
-            <div className="mt-2 flex items-baseline">
-              <SmartAnimatedNumber value={Math.round(remainingKm)} />
-              <span className="ml-2 text-2xl font-semibold text-gray-600" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif" }}>km</span>
+            {/* Take Off Button */}
+            {activeFlight.status === "ready" && (
+              <motion.button
+                type="button"
+                onClick={launchFlight}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                className="mt-4 w-full rounded-xl border border-white/20 bg-white/10 px-6 py-4 text-sm font-bold text-white shadow-lg backdrop-blur-2xl transition-all hover:bg-white/20"
+              >
+                Take Off
+              </motion.button>
+            )}
+          </motion.div>
+
+          {/* Distance - Bottom Right */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1], delay: 0.1 }}
+            className="absolute bottom-8 right-8 z-20"
+            style={{ fontFamily: "'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif" }}
+          >
+            <div className="rounded-2xl border border-white/20 bg-white/10 px-8 py-6 shadow-2xl backdrop-blur-2xl">
+              <div className="text-center">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-white/70">
+                  Distance
+                </div>
+                <div className="flex items-baseline justify-center gap-2 font-mono text-5xl font-bold tabular-nums text-white">
+                  <SmartAnimatedNumber value={Math.round(remainingKm)} />
+                  <span className="text-2xl text-white/60">km</span>
+                </div>
+              </div>
             </div>
-          </div>
-
-          {/* Take Off button (when ready) - center */}
-          {activeFlight.status === "ready" && (
-            <motion.button
-              type="button"
-              onClick={launchFlight}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="absolute left-1/2 -translate-x-1/2 rounded-2xl bg-blue-500 px-10 py-5 text-lg font-semibold text-white shadow-2xl transition hover:bg-blue-600"
-            >
-              Take Off
-            </motion.button>
-          )}
-        </motion.div>
+          </motion.div>
+        </>
       )}
 
       {/* Side panels */}
@@ -787,7 +860,7 @@ function SeatSelector({
         </div>
 
         {/* Scrollable cabin */}
-        <div className="max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300">
+        <div className="max-h-[320px] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300">
           <div className="space-y-3">
             {/* Seat labels */}
             <div className="flex items-center justify-between px-4 pb-2">
